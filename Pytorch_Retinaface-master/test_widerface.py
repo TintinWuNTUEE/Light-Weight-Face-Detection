@@ -20,7 +20,7 @@ parser.add_argument('--network', default='resnet50', help='Backbone network mobi
 parser.add_argument('--origin_size', default=True, type=str, help='Whether use origin image size to evaluate')
 parser.add_argument('--save_folder', default='./widerface_evaluate/widerface_txt/', type=str, help='Dir to save txt results')
 parser.add_argument('--cpu', action="store_true", default=False, help='Use cpu inference')
-parser.add_argument('--dataset_folder', default='./data/widerface/val/images/', type=str, help='dataset path')
+parser.add_argument('--dataset_folder', default='../face_detection/CV_dataset/val/', type=str, help='dataset path')
 parser.add_argument('--confidence_threshold', default=0.02, type=float, help='confidence_threshold')
 parser.add_argument('--top_k', default=5000, type=int, help='top_k')
 parser.add_argument('--nms_threshold', default=0.4, type=float, help='nms_threshold')
@@ -86,17 +86,24 @@ if __name__ == '__main__':
 
     # testing dataset
     testset_folder = args.dataset_folder
-    testset_list = args.dataset_folder[:-7] + "wider_val.txt"
 
-    with open(testset_list, 'r') as fr:
-        test_dataset = fr.read().split()
+    for _, _, files in os.walk(testset_folder):
+        test_dataset = files
+
     num_images = len(test_dataset)
 
     _t = {'forward_pass': Timer(), 'misc': Timer()}
 
+    save_name = args.save_folder + "solution.txt"
+    dirname = os.path.dirname(save_name)
+    if not os.path.isdir(dirname):
+        os.makedirs(dirname)
+
+    fd = open(save_name, 'w')
+
     # testing begin
     for i, img_name in enumerate(test_dataset):
-        image_path = testset_folder + img_name
+        image_path = testset_folder + "images/" + img_name
         img_raw = cv2.imread(image_path, cv2.IMREAD_COLOR)
         img = np.float32(img_raw)
 
@@ -171,24 +178,21 @@ if __name__ == '__main__':
         _t['misc'].toc()
 
         # --------------------------------------------------------------------
-        save_name = args.save_folder + img_name[:-4] + ".txt"
-        dirname = os.path.dirname(save_name)
-        if not os.path.isdir(dirname):
-            os.makedirs(dirname)
-        with open(save_name, "w") as fd:
-            bboxs = dets
-            file_name = os.path.basename(save_name)[:-4] + "\n"
-            bboxs_num = str(len(bboxs)) + "\n"
-            fd.write(file_name)
-            fd.write(bboxs_num)
-            for box in bboxs:
-                x = int(box[0])
-                y = int(box[1])
-                w = int(box[2]) - int(box[0])
-                h = int(box[3]) - int(box[1])
-                confidence = str(box[4])
-                line = str(x) + " " + str(y) + " " + str(w) + " " + str(h) + " " + confidence + " \n"
-                fd.write(line)
+        bboxs = dets
+        file_name = "# " + img_name[:-4] + "\n"
+        bboxs_num = str(len(bboxs)) + "\n"
+        fd.write(file_name)
+        fd.write(bboxs_num)
+        for box in bboxs:
+            x = int(box[0])
+            y = int(box[1])
+            w = int(box[2]) - int(box[0])
+            h = int(box[3]) - int(box[1])
+            confidence = str(box[4])
+            line = str(x) + " " + str(y) + " " + str(w) + " " + str(h) + " " + confidence + " "
+            landms_out = " ".join(str(l) for l in box[5:])
+            line = line + landms_out + '\n'
+            fd.write(line)
 
         print('im_detect: {:d}/{:d} forward_pass_time: {:.4f}s misc: {:.4f}s'.format(i + 1, num_images, _t['forward_pass'].average_time, _t['misc'].average_time))
 

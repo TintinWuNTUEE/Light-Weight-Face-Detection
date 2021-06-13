@@ -1,1 +1,10 @@
 *.jpg
+.vscode
+.DS_store
+build
+box_overlaps.c
+*.so
+__pycache__
+*.txt
+*.zip
+*.o
