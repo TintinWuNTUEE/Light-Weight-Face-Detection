@@ -102,6 +102,10 @@ class FPN(nn.Module):
 class MobileNetV1(nn.Module):
     def __init__(self):
         super(MobileNetV1, self).__init__()
+        self.model = models.mobilenet_v2(pretrained = True)
+        self.stage1 = self.model.features[0:11]
+        self.stage2 = self.model.features[11:17]
+        self.stage3 = self.model.features[17:]
         self.stage1 = nn.Sequential(
             conv_bn(3, 8, 2, leaky = 0.1),    # 3
             conv_dw(8, 16, 1),   # 7
@@ -119,7 +123,7 @@ class MobileNetV1(nn.Module):
             conv_dw(128, 128, 1), # 187 + 32 = 219
         )
         self.stage3 = nn.Sequential(
-            conv_dw(128, 256, 2), # 219 +3 2 = 241
+            conv_dw(128, 256, 2), # 219 + 32 = 241
             conv_dw(256, 256, 1), # 241 + 64 = 301
         )
         self.avg = nn.AdaptiveAvgPool2d((1,1))

@@ -106,7 +106,7 @@ class RetinaFace(nn.Module):
 
     def forward(self,inputs):
         out = self.body(inputs)
-
+        print(out)
         # FPN
         fpn = self.fpn(out)
 
