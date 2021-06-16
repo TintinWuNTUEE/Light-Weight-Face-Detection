@@ -27,6 +27,16 @@ parser.add_argument('--save_folder', default='./weights/', help='Location to sav
 
 args = parser.parse_args()
 
+
+
+def get_mem_allocated(device):
+    if device.type == 'cuda':
+        print(torch.cuda.get_device_name(0))
+        print('Memory Usage:')
+        print('Allocated:', round(torch.cuda.memory_allocated(0)/1024**3,1), 'GB')
+        print('Cached:   ', round(torch.cuda.memory_reserved(0)/1024**3,1), 'GB')
+device = torch.device("cuda")
+
 if not os.path.exists(args.save_folder):
     os.mkdir(args.save_folder)
 cfg = None
@@ -53,7 +63,7 @@ save_folder = args.save_folder
 
 net = RetinaFace(cfg=cfg)
 print("Printing net...")
-print(net)
+# print(net)
 
 if args.resume_net is not None:
     print('Loading resume network...')
@@ -127,7 +137,9 @@ def train():
 
         # backprop
         optimizer.zero_grad()
+        # get_mem_allocated(device)
         loss_l, loss_c, loss_landm = criterion(out, priors, targets)
+        
         loss = cfg['loc_weight'] * loss_l + loss_c + loss_landm
         loss.backward()
         optimizer.step()
