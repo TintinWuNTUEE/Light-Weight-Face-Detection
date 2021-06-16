@@ -114,10 +114,10 @@ class MobileNetV1(nn.Module):
             # inverted_residual(32,192,64),  
             # conv_dw(64,64,1),  
             inverted_residual(3,8,16,2,1),
-            inverted_residual(16,96,32,2,1),
-            inverted_residual(32,192,32,1,1),
-            inverted_residual(32,192,64,1,2),
-            inverted_residual(64,384,64,1,1)
+            inverted_residual(16,64,32,2,1),
+            inverted_residual(32,64,32,1,1),
+            inverted_residual(32,64,64,1,2),
+            inverted_residual(64,128,64,1,1)
 
             # conv_bn(3, 8, 2, leaky = 0.1),    # 3
             # conv_dw(8, 16, 1),   # 7
@@ -127,13 +127,13 @@ class MobileNetV1(nn.Module):
             # conv_dw(64, 64, 1),  # 43
         )
         self.stage2 = nn.Sequential(
-            inverted_residual(64,384,128,1,2),
-            inverted_residual(128,768,128,1,1),
-            inverted_residual(128,768,128,1,1),
-            inverted_residual(128,768,128,1,1),
-            inverted_residual(128,768,128,1,1),
-            inverted_residual(128,768,128,1,1),
-            inverted_residual(128,768,128,1,1),
+            inverted_residual(64,128,128,1,2),
+            inverted_residual(128,256,128,1,1),
+            inverted_residual(128,256,128,1,1),
+            inverted_residual(128,256,128,1,1),
+            inverted_residual(128,256,128,1,1),
+            inverted_residual(128,256,128,1,1),
+            inverted_residual(128,256,128,1,1),
             # inverted_residual(128,768,128),
             # inverted_residual(128,768,128),
             # inverted_residual(128,768,128),        
@@ -149,8 +149,8 @@ class MobileNetV1(nn.Module):
             # conv_dw(128, 128, 1),
         )
         self.stage3 = nn.Sequential(
-            inverted_residual(128,768,256,1,2),
-            inverted_residual(256,1536,256,1,1),
+            inverted_residual(128,512,256,1,2),
+            inverted_residual(256,512,256,1,1),
             # conv_dw(128, 256, 2), # 219 + 32 = 241
             # conv_dw(256, 256, 1), # 241 + 64 = 301
         )
@@ -168,3 +168,6 @@ class MobileNetV1(nn.Module):
         x = self.fc(x)
         return x
 
+if __name__ == "__main__":
+    model = MobileNetV1()
+    torch.save(MobileNetV1().state_dict(), './mobilenet_v2.pth')

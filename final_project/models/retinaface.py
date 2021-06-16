@@ -70,6 +70,7 @@ class RetinaFace(nn.Module):
             backbone = models.resnet50(pretrained=cfg['pretrain'])
 
         self.body = _utils.IntermediateLayerGetter(backbone, cfg['return_layers'])
+        # print(self.body)
         in_channels_stage2 = cfg['in_channel']
         in_channels_list = [
             in_channels_stage2 * 2,
@@ -106,7 +107,6 @@ class RetinaFace(nn.Module):
 
     def forward(self,inputs):
         out = self.body(inputs)
-        print(out)
         # FPN
         fpn = self.fpn(out)
 
