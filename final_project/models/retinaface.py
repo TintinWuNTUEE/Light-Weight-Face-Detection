@@ -135,3 +135,6 @@ class RetinaFace(nn.Module):
         else:
             output = (bbox_regressions, F.softmax(classifications, dim=-1), ldm_regressions)
         return output
+if __name__ == '__main__':
+    model = RetinaFace()
+    torch.save(model.state_dict(), './retinaface.pth')
