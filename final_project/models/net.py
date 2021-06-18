@@ -176,10 +176,10 @@ class MobileNetV1(nn.Module):
             # conv_dw(128, 128, 1),
         )
         self.stage3 = nn.Sequential(
-            def_inverted_residual(128,512,256,1,2),
-            def_inverted_residual(256,512,256,1,1),
-            # inverted_residual(128,512,256,1,2),
-            # inverted_residual(256,512,256,1,1),
+            # def_inverted_residual(128,512,256,1,2),
+            # def_inverted_residual(256,512,256,1,1),
+            inverted_residual(128,512,256,1,2),
+            inverted_residual(256,512,256,1,1),
             # conv_dw(128, 256, 2), # 219 + 32 = 241
             # conv_dw(256, 256, 1), # 241 + 64 = 301
         )
