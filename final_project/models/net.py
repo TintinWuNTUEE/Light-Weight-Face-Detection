@@ -82,7 +82,7 @@ class SSH(nn.Module):
 
         self.conv7X7_2 = conv_bn(out_channel//4, out_channel//4, stride=1, leaky = leaky)
         self.conv7x7_3 = conv_bn_no_relu(out_channel//4, out_channel//4, stride=1)
-
+        self.dcn = Deform_Conv_V1(out_channel, out_channel)
     def forward(self, input):
         conv3X3 = self.conv3X3(input)
 
@@ -94,6 +94,7 @@ class SSH(nn.Module):
 
         out = torch.cat([conv3X3, conv5X5, conv7X7], dim=1)
         out = F.relu(out)
+        out = self.dcn(out)
         return out
 
 class FPN(nn.Module):
@@ -178,8 +179,8 @@ class MobileNetV1(nn.Module):
         self.stage3 = nn.Sequential(
             # def_inverted_residual(128,512,256,1,2),
             # def_inverted_residual(256,512,256,1,1),
-            inverted_residual(128,512,256,1,2),
-            inverted_residual(256,512,256,1,1),
+            inverted_residual(128,256,256,1,2),
+            inverted_residual(256,256,256,1,1),
             # conv_dw(128, 256, 2), # 219 + 32 = 241
             # conv_dw(256, 256, 1), # 241 + 64 = 301
         )
