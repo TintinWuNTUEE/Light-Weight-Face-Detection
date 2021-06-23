@@ -144,8 +144,8 @@ class MobileNetV1(nn.Module):
             # inverted_residual(32,192,64),  
             # conv_dw(64,64,1),  
             inverted_residual(3,8,16,2,1),
-            inverted_residual(16,32,32,2,1),
-            inverted_residual(32,32,32,1,1),
+            inverted_residual(16,64,32,2,1),
+            inverted_residual(32,64,32,1,1),
             inverted_residual(32,64,64,1,2),
             inverted_residual(64,128,64,1,1)
 
@@ -186,18 +186,11 @@ class MobileNetV1(nn.Module):
             # conv_dw(128, 256, 2), # 219 + 32 = 241
             # conv_dw(256, 256, 1), # 241 + 64 = 301
         )
-        self.avg = nn.AdaptiveAvgPool2d((1,1))
-        self.fc = nn.Linear(256, 1000)
 
     def forward(self, x):
-        x = self.stage1(x)
-        
+        x = self.stage1(x)    
         x = self.stage2(x)
         x = self.stage3(x)
-        x = self.avg(x)
-        # x = self.model(x)
-        x = x.view(-1, 256)
-        x = self.fc(x)
         return x
     
 class Inception(nn.Module):
