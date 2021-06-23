@@ -2,9 +2,46 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-from utils.box_utils import match, log_sum_exp
+from utils.box_utils import match, log_sum_exp, decode
 from data import cfg_mnet
 GPU = cfg_mnet['gpu_train']
+
+def bbox_overlaps_giou(bboxes1, bboxes2):
+    rows = bboxes1.shape[0]
+    cols = bboxes2.shape[0]
+    ious = torch.zeros((rows, cols))
+    if rows * cols == 0:
+        return ious
+    exchange = False
+    if bboxes1.shape[0] > bboxes2.shape[0]:
+        bboxes1, bboxes2 = bboxes2, bboxes1
+        ious = torch.zeros((cols, rows))
+        exchange = True
+    area1 = (bboxes1[:, 2] - bboxes1[:, 0]) * (
+        bboxes1[:, 3] - bboxes1[:, 1])
+    area2 = (bboxes2[:, 2] - bboxes2[:, 0]) * (
+        bboxes2[:, 3] - bboxes2[:, 1])
+
+    inter_max_xy = torch.min(bboxes1[:, 2:],bboxes2[:, 2:])
+
+    inter_min_xy = torch.max(bboxes1[:, :2],bboxes2[:, :2])
+
+    out_max_xy = torch.max(bboxes1[:, 2:],bboxes2[:, 2:])
+
+    out_min_xy = torch.min(bboxes1[:, :2],bboxes2[:, :2])
+
+    inter = torch.clamp((inter_max_xy - inter_min_xy), min=0)
+    inter_area = inter[:, 0] * inter[:, 1]
+    outer = torch.clamp((out_max_xy - out_min_xy), min=0)
+    outer_area = outer[:, 0] * outer[:, 1]
+    union = area1+area2-inter_area
+    closure = outer_area
+
+    ious = inter_area / union - (closure - union) / closure
+    ious = torch.clamp(ious,min=-1.0,max = 1.0)
+    if exchange:
+        ious = ious.T
+    return ious
 
 class MultiBoxLoss(nn.Module):
     """SSD Weighted Loss Function
@@ -94,7 +131,9 @@ class MultiBoxLoss(nn.Module):
         pos_idx = pos.unsqueeze(pos.dim()).expand_as(loc_data)
         loc_p = loc_data[pos_idx].view(-1, 4)
         loc_t = loc_t[pos_idx].view(-1, 4)
-        loss_l = F.smooth_l1_loss(loc_p, loc_t, reduction='sum')
+        giou_priors = priors.data.unsqueeze(0).expand_as(loc_data)
+        decode_boxes = decode(loc_p, giou_priors[pos_idx].view(-1, 4),self.variance)
+        loss_l = torch.sum(1.0 - bbox_overlaps_giou(decode_boxes,loc_t))
 
         # Compute max conf across batch for hard negative mining
         batch_conf = conf_data.view(-1, self.num_classes)
