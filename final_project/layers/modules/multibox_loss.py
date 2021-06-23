@@ -43,6 +43,46 @@ def bbox_overlaps_giou(bboxes1, bboxes2):
         ious = ious.T
     return ious
 
+def bbox_overlaps_diou(bboxes1, bboxes2):
+    rows = bboxes1.shape[0]
+    cols = bboxes2.shape[0]
+    ious = torch.zeros((rows, cols))
+    if rows * cols == 0:
+        return ious
+    exchange = False
+    if bboxes1.shape[0] > bboxes2.shape[0]:
+        bboxes1, bboxes2 = bboxes2, bboxes1
+        ious = torch.zeros((cols, rows))
+        exchange = True
+    area1 = (bboxes1[:, 2] - bboxes1[:, 0]) * (
+        bboxes1[:, 3] - bboxes1[:, 1])
+    area2 = (bboxes2[:, 2] - bboxes2[:, 0]) * (
+        bboxes2[:, 3] - bboxes2[:, 1])
+
+    inter_max_xy = torch.min(bboxes1[:, 2:],bboxes2[:, 2:])
+
+    inter_min_xy = torch.max(bboxes1[:, :2],bboxes2[:, :2])
+
+    out_max_xy = torch.max(bboxes1[:, 2:],bboxes2[:, 2:])
+
+    out_min_xy = torch.min(bboxes1[:, :2],bboxes2[:, :2])
+
+    inter = torch.clamp((inter_max_xy - inter_min_xy), min=0)
+    inter_area = inter[:, 0] * inter[:, 1]
+    union = area1+area2-inter_area
+    
+    outer_diag = torch.sum((out_max_xy - out_min_xy)**2, dim=1)
+    center1 = (bboxes1[:,:2] + bboxes1[:,2:])/2
+    center2 = (bboxes2[:,:2] + bboxes2[:,2:])/2
+    center_diag = torch.sum((center2 - center1)**2, dim=1)
+    ious = inter_area / union - (center_diag) / outer_diag
+ 
+    ious = torch.clamp(ious,min=-1.0,max = 1.0)
+    if exchange:
+        ious = ious.T
+    return ious
+
+
 class MultiBoxLoss(nn.Module):
     """SSD Weighted Loss Function
     Compute Targets:
@@ -133,7 +173,8 @@ class MultiBoxLoss(nn.Module):
         loc_t = loc_t[pos_idx].view(-1, 4)
         giou_priors = priors.data.unsqueeze(0).expand_as(loc_data)
         decode_boxes = decode(loc_p, giou_priors[pos_idx].view(-1, 4),self.variance)
-        loss_l = torch.sum(1.0 - bbox_overlaps_giou(decode_boxes,loc_t))
+        # choose diou or giou
+        loss_l = torch.sum(1.0 - bbox_overlaps_diou(decode_boxes,loc_t))
 
         # Compute max conf across batch for hard negative mining
         batch_conf = conf_data.view(-1, self.num_classes)
