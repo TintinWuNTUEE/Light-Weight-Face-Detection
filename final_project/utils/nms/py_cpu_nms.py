@@ -37,8 +37,8 @@ def py_cpu_nms(dets, thresh):
         center_dist_y = np.square((y1[i] + y1[order[1:]]) / 2 - (y2[i] + y2[order[1:]]) / 2)
         center_dist = center_dist_x + center_dist_y
         
-        outer_x1 = np.minimem(x1[i], x1[order[1:]])
-        outer_y1 = np.minimem(y1[i], y1[order[1:]])
+        outer_x1 = np.minimum(x1[i], x1[order[1:]])
+        outer_y1 = np.minimum(y1[i], y1[order[1:]])
         outer_x2 = np.maximum(x2[i], x2[order[1:]])
         outer_y2 = np.maximum(y2[i], y2[order[1:]])
 
