@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from collections import OrderedDict
 
 from models.net import MobileNetV1 as MobileNetV1
-from models.net import BiFPN as BiFPN
+from models.net import FPN as FPN
 from models.net import SSH as SSH
 
 
@@ -77,7 +77,7 @@ class RetinaFace(nn.Module):
             in_channels_stage2 * 8,
         ]
         out_channels = cfg['out_channel']
-        self.fpn = BiFPN(in_channels_list,out_channels)
+        self.fpn = FPN(in_channels_list,out_channels)
         self.ssh1 = SSH(out_channels, out_channels)
         self.ssh2 = SSH(out_channels, out_channels)
         self.ssh3 = SSH(out_channels, out_channels)

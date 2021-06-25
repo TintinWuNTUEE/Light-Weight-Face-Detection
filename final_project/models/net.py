@@ -82,8 +82,8 @@ class SSH(nn.Module):
 
         self.conv7X7_2 = conv_bn(out_channel//4, out_channel//4, stride=1, leaky = leaky)
         self.conv7x7_3 = conv_bn_no_relu(out_channel//4, out_channel//4, stride=1)
-        self.dcn1= Deform_Conv_V1(out_channel, out_channel)
-        self.dcn2=Deform_Conv_V1(out_channel, out_channel)
+        self.dcn1 = Deform_Conv_V1(out_channel, out_channel)
+        self.dcn2 = Deform_Conv_V1(out_channel,out_channel)
     def forward(self, input):
         conv3X3 = self.conv3X3(input)
 
@@ -99,9 +99,9 @@ class SSH(nn.Module):
         out = self.dcn2(out)
         return out
 
-class BiFPN(nn.Module):
+class FPN(nn.Module):
     def __init__(self,in_channels_list,out_channels):
-        super(BiFPN,self).__init__()
+        super(FPN,self).__init__()
         leaky = 0
         if (out_channels <= 64):
             leaky = 0.1
@@ -109,10 +109,8 @@ class BiFPN(nn.Module):
         self.output2 = conv_bn1X1(in_channels_list[1], out_channels, stride = 1, leaky = leaky)
         self.output3 = conv_bn1X1(in_channels_list[2], out_channels, stride = 1, leaky = leaky)
 
-        self.mergeup1 = conv_bn(out_channels, out_channels, leaky = leaky)
-        self.mergeup2 = conv_bn(out_channels, out_channels, leaky = leaky)
-        self.mergedw2 = conv_bn(out_channels, out_channels, leaky = leaky)
-        self.mergedw3 = conv_bn(out_channels, out_channels, leaky = leaky)
+        self.merge1 = conv_bn(out_channels, out_channels, leaky = leaky)
+        self.merge2 = conv_bn(out_channels, out_channels, leaky = leaky)
 
     def forward(self, input):
         # names = list(input.keys())
@@ -124,20 +122,11 @@ class BiFPN(nn.Module):
 
         up3 = F.interpolate(output3, size=[output2.size(2), output2.size(3)], mode="nearest")
         output2 = output2 + up3
-        merged2 = self.mergeup2(output2)
+        output2 = self.merge2(output2)
 
-        up2 = F.interpolate(merged2, size=[output1.size(2), output1.size(3)], mode="nearest")
-        output1 = output1 + up2 
-        output1 = self.mergeup1(output1)
-        
-        dw1 = F.interpolate(output1, size=[output2.size(2), output2.size(3)], mode="nearest")
-        output2 = output2 + merged2 + dw1
-        output2 = self.mergedw2(output2)
-        
-        dw2 = F.interpolate(output2,size=[output3.size(2), output3.size(3)], mode="nearest")
-        output3 = output3 + dw2
-        output3 = self.mergedw3(output3)
-        
+        up2 = F.interpolate(output2, size=[output1.size(2), output1.size(3)], mode="nearest")
+        output1 = output1 + up2
+        output1 = self.merge1(output1)
 
         out = [output1, output2, output3]
         return out
@@ -170,8 +159,8 @@ class MobileNetV1(nn.Module):
         self.stage2 = nn.Sequential(
             inverted_residual(64,128,128,1,2),
             inverted_residual(128,128,128,1,1),
-            inverted_residual(128,128,128,1,1),
-            inverted_residual(128,128,128,1,1),
+            inverted_residual(128,256,128,1,1),
+            inverted_residual(128,256,128,1,1),
             inverted_residual(128,256,128,1,1),
             inverted_residual(128,256,128,1,1),
             inverted_residual(128,256,128,1,1),
@@ -197,18 +186,10 @@ class MobileNetV1(nn.Module):
             # conv_dw(128, 256, 2), # 219 + 32 = 241
             # conv_dw(256, 256, 1), # 241 + 64 = 301
         )
-        self.avg = nn.AdaptiveAvgPool2d((1,1))
-        self.fc = nn.Linear(256, 1000)
-
     def forward(self, x):
         x = self.stage1(x)
-        
         x = self.stage2(x)
         x = self.stage3(x)
-        x = self.avg(x)
-        # x = self.model(x)
-        x = x.view(-1, 256)
-        x = self.fc(x)
         return x
     
 class Deform_Conv_V1(nn.Module):
