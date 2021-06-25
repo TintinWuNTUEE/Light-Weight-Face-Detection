@@ -13,10 +13,10 @@
         ├── layers/
         ├── utils/
         ├── models/
-            ├── net.py
-            └── retinaface.py
-        ├── train.py
-        └── test_wider_face.py
+            ├── net.py          # main contribution (fpn, Deformable_Convolution , inverted_residual)
+            └── retinaface.py   # main contribution (fpn, Deformable_Convolution , inverted_residual)
+        ├── train.py            # used for training
+        └── test_wider_face.py  # used for evaluating
 
 ## Training
 ```
