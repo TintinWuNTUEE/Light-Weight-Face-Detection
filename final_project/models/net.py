@@ -37,37 +37,13 @@ def conv_dw(inp, oup, stride, leaky=0.1):
         nn.BatchNorm2d(oup),
         nn.LeakyReLU(negative_slope= leaky,inplace=True),
     )
-    
+
 def inverted_residual(inp,hidden,oup,stride_bn,stride_dw):
     return nn.Sequential(
         conv_bn1X1(inp,hidden,stride_bn),
         conv_dw(hidden,oup,stride_dw)
     )
-    
-def defconv_bn1X1(inp, oup, stride, leaky=0):
-    return nn.Sequential(
-        Deform_Conv_V1(inp, oup, 1, stride, padding=0),
-        nn.BatchNorm2d(oup),
-        nn.LeakyReLU(negative_slope=leaky, inplace=True)
-    )
 
-def defconv_dw(inp, oup, stride, leaky=0.1):
-    return nn.Sequential(
-        Deform_Conv_V1(inp, inp, 3, stride, 1, groups=inp),
-        nn.BatchNorm2d(inp),
-        nn.LeakyReLU(negative_slope= leaky,inplace=True),
-
-        Deform_Conv_V1(inp, oup, 1, 1, 0),
-        nn.BatchNorm2d(oup),
-        nn.LeakyReLU(negative_slope= leaky,inplace=True),
-    )
-    
-def def_inverted_residual(inp,hidden,oup,stride_bn,stride_dw):
-    return nn.Sequential(
-        defconv_bn1X1(inp,hidden,stride_bn),
-        defconv_dw(hidden,oup,stride_dw)        
-    )
-    
 class SSH(nn.Module):
     def __init__(self, in_channel, out_channel):
         super(SSH, self).__init__()
@@ -113,7 +89,6 @@ class FPN(nn.Module):
         self.merge2 = conv_bn(out_channels, out_channels, leaky = leaky)
 
     def forward(self, input):
-        # names = list(input.keys())
         input = list(input.values())
 
         output1 = self.output1(input[0])
@@ -135,26 +110,13 @@ class FPN(nn.Module):
 class MobileNetV1(nn.Module):
     def __init__(self):
         super(MobileNetV1, self).__init__()
-        
+
         self.stage1 = nn.Sequential(
-            # inverted_residual(3,18,8),   
-            # inverted_residual(8,32,16),   
-            # inverted_residual(16,96,32),  
-            # inverted_residual(32,192,32),  
-            # inverted_residual(32,192,64),  
-            # conv_dw(64,64,1),  
             inverted_residual(3,8,16,2,1),
             inverted_residual(16,64,32,2,1),
             inverted_residual(32,64,32,1,1),
             inverted_residual(32,64,64,1,2),
             inverted_residual(64,128,64,1,1)
-
-            # conv_bn(3, 8, 2, leaky = 0.1),    # 3
-            # conv_dw(8, 16, 1),   # 7
-            # conv_dw(16, 32, 2),  # 11
-            # conv_dw(192, 32, 1),  # 19
-            # conv_dw(32, 64, 2),  # 27
-            # conv_dw(64, 64, 1),  # 43
         )
         self.stage2 = nn.Sequential(
             inverted_residual(64,128,128,1,2),
@@ -164,70 +126,17 @@ class MobileNetV1(nn.Module):
             inverted_residual(128,256,128,1,1),
             inverted_residual(128,256,128,1,1),
             inverted_residual(128,256,128,1,1),
-            # inverted_residual(128,768,128),
-            # inverted_residual(128,768,128),
-            # inverted_residual(128,768,128),        
-            
-            # conv_dw(64, 128, 2),  # 43 + 16 = 59
-
-            # conv_dw(128, 128, 1), # 59 + 32 = 91
-
-            # conv_dw(128, 128, 1), # 91 + 32 = 123
-            # conv_dw(128, 128, 1), # 123 + 32 = 155
-            # conv_dw(128, 128, 1), # 155 + 32 = 187
-            # conv_dw(128, 128, 1), # 187 + 32 = 219
-            # conv_dw(128, 128, 1),
         )
         self.stage3 = nn.Sequential(
-            # def_inverted_residual(128,512,256,1,2),
-            # def_inverted_residual(256,512,256,1,1),
             inverted_residual(128,256,256,1,2),
             inverted_residual(256,256,256,1,1),
-            # conv_dw(128, 256, 2), # 219 + 32 = 241
-            # conv_dw(256, 256, 1), # 241 + 64 = 301
         )
-
     def forward(self, x):
-        x = self.stage1(x)    
+        x = self.stage1(x)
         x = self.stage2(x)
         x = self.stage3(x)
         return x
-    
-class Inception(nn.Module):
-    def __init__(self,in_c,c1,c2,c3,c4):
-        super(Inception,self).__init__()
-        #线路1 1*1的卷积层
-        self.p1 = nn.Sequential(
-            nn.Conv2d(in_c,c1,kernel_size=1),
-            nn.ReLU()
-        )
-        #线路2 1*1卷积层后接3*3的卷积
-        self.p2 = nn.Sequential(
-            nn.Conv2d(in_c,c2[0],kernel_size=1),
-            nn.ReLU(),
-            nn.Conv2d(c2[0], c2[1], kernel_size=3,padding=1),
-            nn.ReLU()
-        )
-        #线路3 1*1卷积层后接5*5的卷积层
-        self.p3 = nn.Sequential(
-            nn.Conv2d(in_c, c3[0], kernel_size=1),
-            nn.ReLU(),
-            nn.Conv2d(c3[0], c3[1], kernel_size=5,padding=2),
-            nn.ReLU()
-        )
-        #线路4 3*3最大池化后接1*1卷积层
-        self.p4 = nn.Sequential(
-            nn.MaxPool2d(kernel_size=3,stride=1,padding=1),
-            nn.Conv2d(in_c,c4,kernel_size=1),
-            nn.ReLU()
-        )
-    def forward(self, x):
-        p1 = self.p1(x)
-        p2 = self.p2(x)
-        p3 = self.p3(x)
-        p4 = self.p4(x)
-        return torch.cat((p1,p2,p3,p4),dim=1)
-    
+
 class Deform_Conv_V1(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size=3, stride=1,
                  padding=1, dilation=1, groups=1, offset_group=1):

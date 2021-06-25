@@ -1,6 +1,3 @@
-import os
-import os.path
-import sys
 import torch
 import torch.utils.data as data
 import cv2
@@ -39,7 +36,6 @@ class WiderFaceDetection(data.Dataset):
 
     def __getitem__(self, index):
         img = cv2.imread(self.imgs_path[index])
-        height, width, _ = img.shape
 
         labels = self.words[index]
         annotations = np.zeros((0, 15))
