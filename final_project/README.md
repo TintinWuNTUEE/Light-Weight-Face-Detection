@@ -4,19 +4,19 @@
 
 
 ## folder structure
-.
-├── README
-├── best_model.pth
-├── presentation file
-└── final_project           # source codes
-    ├── data/
-    ├── layers/
-    ├── utils/
-    ├── models/
-        ├── net.py
-        └── retinaface.py
-    ├── train.py
-    └── test_wider_face.py
+    .
+    ├── README
+    ├── best_model.pth
+    ├── presentation file
+    └── final_project           # source codes
+        ├── data/
+        ├── layers/
+        ├── utils/
+        ├── models/
+            ├── net.py
+            └── retinaface.py
+        ├── train.py
+        └── test_wider_face.py
 
 ## Training
 ```
