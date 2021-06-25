@@ -22,15 +22,32 @@ def py_cpu_nms(dets, thresh):
     while order.size > 0:
         i = order[0]
         keep.append(i)
-        xx1 = np.maximum(x1[i], x1[order[1:]])
-        yy1 = np.maximum(y1[i], y1[order[1:]])
-        xx2 = np.minimum(x2[i], x2[order[1:]])
-        yy2 = np.minimum(y2[i], y2[order[1:]])
+        inter_x1 = np.maximum(x1[i], x1[order[1:]])
+        inter_y1 = np.maximum(y1[i], y1[order[1:]])
+        inter_x2 = np.minimum(x2[i], x2[order[1:]])
+        inter_y2 = np.minimum(y2[i], y2[order[1:]])
 
-        w = np.maximum(0.0, xx2 - xx1 + 1)
-        h = np.maximum(0.0, yy2 - yy1 + 1)
+        w = np.maximum(0.0, inter_x2 - inter_x1)
+        h = np.maximum(0.0, inter_y2 - inter_y1)
         inter = w * h
         ovr = inter / (areas[i] + areas[order[1:]] - inter)
+
+        # diounms, delete will be normal nms
+        # center_dist_x = np.square((x1[i] + x1[order[1:]]) / 2 - (x2[i] + x2[order[1:]]) / 2)
+        # center_dist_y = np.square((y1[i] + y1[order[1:]]) / 2 - (y2[i] + y2[order[1:]]) / 2)
+        # center_dist = center_dist_x + center_dist_y
+        
+        # outer_x1 = np.minimum(x1[i], x1[order[1:]])
+        # outer_y1 = np.minimum(y1[i], y1[order[1:]])
+        # outer_x2 = np.maximum(x2[i], x2[order[1:]])
+        # outer_y2 = np.maximum(y2[i], y2[order[1:]])
+
+        # w = np.maximum(0.0, outer_x2 - outer_x1)
+        # h = np.maximum(0.0, outer_y2 - outer_y1)
+        # bounding = w**2 + h**2
+        
+        # ovr = ovr - center_dist/bounding        
+        # diounms end
 
         inds = np.where(ovr <= thresh)[0]
         order = order[inds + 1]

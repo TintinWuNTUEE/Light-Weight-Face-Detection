@@ -94,7 +94,10 @@ class MultiBoxLoss(nn.Module):
         pos_idx = pos.unsqueeze(pos.dim()).expand_as(loc_data)
         loc_p = loc_data[pos_idx].view(-1, 4)
         loc_t = loc_t[pos_idx].view(-1, 4)
-        loss_l = F.smooth_l1_loss(loc_p, loc_t, reduction='sum')
+        giou_priors = priors.data.unsqueeze(0).expand_as(loc_data)
+        decode_boxes = decode(loc_p, giou_priors[pos_idx].view(-1, 4),self.variance)
+        # choose diou or giou
+        loss_l = torch.sum(1.0 - bbox_overlaps_diou(decode_boxes,loc_t))
 
         # Compute max conf across batch for hard negative mining
         batch_conf = conf_data.view(-1, self.num_classes)
