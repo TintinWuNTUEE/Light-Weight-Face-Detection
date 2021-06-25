@@ -38,8 +38,6 @@ if not os.path.exists(save_folder):
     os.mkdir(save_folder)
 
 net = RetinaFace(cfg=cfg)
-torch.save(net.state_dict(), './retinaface.pth')
-
 net = net.cuda()
 cudnn.benchmark = True
 

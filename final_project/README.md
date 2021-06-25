@@ -1,8 +1,10 @@
 # Light-Weight-Face-Detection
 
 ## Environments
-
-
+```
+CPU:Intel Core i9-9900k
+GPU:Nvidia RTX 2080 Super
+```
 ## folder structure
     .
     ├── README
